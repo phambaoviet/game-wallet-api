@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: game-wallet-api
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_DB: game-wallet-db
+      POSTGRES_PASSWORD: "viet@123456"
+    ports:
+      - "5433:5432"
+    volumes:
+      - game_wallet_pgdata:/var/lib/postgresql/data
+volumes:
+  game_wallet_pgdata:
+
