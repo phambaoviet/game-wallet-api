@@ -10,8 +10,14 @@ import (
 
 type Querier interface {
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Player, error)
+	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
+	CreateWalletTransaction(ctx context.Context, arg CreateWalletTransactionParams) (WalletTransaction, error)
 	GetPLayerByEmail(ctx context.Context, email string) (Player, error)
 	GetPLayerByID(ctx context.Context, id int64) (Player, error)
+	GetWalletByID(ctx context.Context, id int64) (Wallet, error)
+	GetWalletByPlayerID(ctx context.Context, playerID int64) (Wallet, error)
+	GetWalletForUpdate(ctx context.Context, id int64) (Wallet, error)
+	UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) (Wallet, error)
 }
 
 var _ Querier = (*Queries)(nil)

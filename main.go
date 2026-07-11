@@ -21,6 +21,26 @@ func main() {
 	defer pool.Close()
 
 	queries := db.New(pool)
+	player, err := queries.CreatePlayer(ctx, db.CreatePlayerParams{
+		Username:     "player_two",
+		Email:        "player2@example.com",
+		PasswordHash: "temporary-hash",
+	})
+	if err != nil {
+		log.Fatal("cannot create player: ", err)
+	}
+
+	wallet, err := queries.CreateWallet(ctx, db.CreateWalletParams{
+		PlayerID: player.ID,
+		Balance:  0,
+		Currency: "COIN",
+	})
+	if err != nil {
+		log.Fatal("cannot create wallet: ", err)
+	}
+
+	log.Printf("created player: %+v\n", player)
+	log.Printf("created wallet: %+v\n", wallet)
 	log.Println("Connected to database")
 	log.Printf("sqlc queries initialized: %T\n", queries)
 }
