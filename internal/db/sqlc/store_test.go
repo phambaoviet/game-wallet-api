@@ -85,3 +85,33 @@ func TestTransferTx(t *testing.T) {
 		t.Errorf("expected receiver balance to be 20, got %d", result.ReceiverWallet.Balance)
 	}
 }
+func TestTransferTxInsufficientFunds(t *testing.T) {
+	wallet1 := createRandomWallet(t, 10)
+	wallet2 := createRandomWallet(t, 0)
+	amount := int64(20)
+
+	_, err := testStore.TransferTx(context.Background(), TransferTxParams{
+		SenderWalletID:   wallet1.ID,
+		ReceiverWalletID: wallet2.ID,
+		Amount:           amount,
+		Description:      "Test transfer 20 coin",
+	})
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+	// Get data from wallet1 after error
+	updatedWallet1, err := testQueries.GetWalletByID(context.Background(), wallet1.ID)
+	if err != nil {
+		t.Fatal("failed to get wallet by ID:", err)
+	}
+	if updatedWallet1.Balance != wallet1.Balance {
+		t.Error("expected wallet to be updated")
+	}
+	updatedWallet2, err := testQueries.GetWalletByID(context.Background(), wallet2.ID)
+	if err != nil {
+		t.Fatal("failed to get wallet by ID:", err)
+	}
+	if updatedWallet2.Balance != wallet2.Balance {
+		t.Error("expected wallet to be updated")
+	}
+}
