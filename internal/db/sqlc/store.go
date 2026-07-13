@@ -31,6 +31,17 @@ type TransferResultTx struct {
 	ReceiverTransaction WalletTransaction `json:"receiver_transaction"`
 }
 
+type DepositTxParams struct {
+	ReceiverWalletID int64  `json:"receiver_wallet_id"`
+	Amount           int64  `json:"amount"`
+	Description      string `json:"description"`
+}
+
+type DepositTxResult struct {
+	Wallet      Wallet            `json:"wallet"`
+	Transaction WalletTransaction `json:"transaction"`
+}
+
 func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{
 		Queries: New(pool),
@@ -82,7 +93,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		}
 		// Deduct money
 		result.SenderWallet, err = q.UpdateWalletBalance(ctx, UpdateWalletBalanceParams{
-			Balance: senderWallet.Balance - arg.Amount,
+			Balance: -arg.Amount,
 			ID:      senderWallet.ID,
 		})
 		if err != nil {
@@ -90,7 +101,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		}
 		// Add money
 		result.ReceiverWallet, err = q.UpdateWalletBalance(ctx, UpdateWalletBalanceParams{
-			Balance: receiverWallet.Balance + arg.Amount,
+			Balance: arg.Amount,
 			ID:      receiverWallet.ID,
 		})
 		if err != nil {
@@ -128,6 +139,33 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		}
 		return nil
 	})
-	
+
+	return result, err
+}
+func (store *Store) DepositTx(ctx context.Context, arg DepositTxParams) (DepositTxResult, error) {
+	var result DepositTxResult
+	err := store.execTX(ctx, func(q *Queries) error {
+		var err error
+		// Create a pre-transaction record
+		result.Transaction, err = q.CreateWalletTransaction(ctx, CreateWalletTransactionParams{
+			WalletID: arg.ReceiverWalletID,
+			Amount:   arg.Amount,
+			Description: pgtype.Text{
+				String: arg.Description,
+				Valid:  arg.Description != "",
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("Failed to create receiver transaction: %w", err)
+		}
+		result.Wallet, err = q.UpdateWalletBalance(ctx, UpdateWalletBalanceParams{
+			Balance: arg.Amount,
+			ID:      arg.ReceiverWalletID,
+		})
+		if err != nil {
+			return fmt.Errorf("Failed to get receiver wallet: %w", err)
+		}
+		return nil
+	})
 	return result, err
 }

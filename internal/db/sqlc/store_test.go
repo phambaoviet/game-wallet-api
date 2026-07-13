@@ -161,3 +161,31 @@ func TestTransferTxReceiverNotFound(t *testing.T) {
 		t.Errorf("sender balance changed: got %d, expected %d", updatedSender.Balance, senderWallet.Balance)
 	}
 }
+func TestDepositTx(t *testing.T) {
+	wallet := createRandomWallet(t, 10)
+	amount := int64(20)
+
+	result, err := testStore.DepositTx(context.Background(), DepositTxParams{
+		ReceiverWalletID: wallet.ID,
+		Amount:           amount,
+		Description:      "Test deposit 20 coin",
+	})
+
+	if err != nil {
+		t.Fatal("failed to deposit transaction:", err)
+	}
+	updatedWallet, err := testQueries.GetWalletByID(context.Background(), wallet.ID)
+	if err != nil {
+		t.Fatal("failed to get wallet by ID:", err)
+	}
+	if updatedWallet.Balance-wallet.Balance != amount {
+		t.Errorf("balance mismatch: got difference %d, expected %d", updatedWallet.Balance-wallet.Balance, amount)
+	}
+	if result.Transaction.Amount != amount {
+		t.Errorf("amount mismatch: got %d, expected %d", result.Transaction.Amount, amount)
+	}
+	if result.Wallet.ID != wallet.ID {
+		t.Errorf("wallet mismatch: got %d, expected %d", result.Wallet.ID, wallet.ID)
+	}
+
+}

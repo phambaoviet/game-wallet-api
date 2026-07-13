@@ -25,7 +25,7 @@ WHERE id = $1 FOR UPDATE;
 
 -- name: UpdateWalletBalance :one
 UPDATE wallets
-SET balance = $1
+SET balance = balance + $1
 WHERE id = $2
 RETURNING id, player_id, balance, currency, created_at, updated_at;
 
