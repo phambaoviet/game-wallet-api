@@ -189,3 +189,31 @@ func TestDepositTx(t *testing.T) {
 	}
 
 }
+func checkInvalidDeposit(t *testing.T, err error, walletID int64, initialBalance int64) {
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	updatedWallet, err := testQueries.GetWalletByID(context.Background(), walletID)
+	if err != nil {
+		t.Fatal("failed to get wallet by ID:", err)
+	}
+	if updatedWallet.Balance != initialBalance {
+		t.Errorf("balance mismatch: got %d, expected %d", updatedWallet.Balance, initialBalance)
+	}
+}
+func TestDepositTxInvalidAmount(t *testing.T) {
+	wallet := createRandomWallet(t, 10)
+	_, err := testStore.DepositTx(context.Background(), DepositTxParams{
+		ReceiverWalletID: wallet.ID,
+		Amount:           -1,
+	})
+	checkInvalidDeposit(t, err, wallet.ID, wallet.Balance)
+}
+func TestDepositTxInvalidID(t *testing.T) {
+	wallet := createRandomWallet(t, 10)
+	_, err := testStore.DepositTx(context.Background(), DepositTxParams{
+		ReceiverWalletID: nonExistentWalletID,
+		Amount:           40,
+	})
+	checkInvalidDeposit(t, err, wallet.ID, wallet.Balance)
+}

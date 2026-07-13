@@ -155,6 +155,9 @@ func (store *Store) DepositTx(ctx context.Context, arg DepositTxParams) (Deposit
 				Valid:  arg.Description != "",
 			},
 		})
+		if arg.Amount <= 0 {
+			return fmt.Errorf("invalid deposit amount")
+		}
 		if err != nil {
 			return fmt.Errorf("Failed to create receiver transaction: %w", err)
 		}
@@ -165,6 +168,7 @@ func (store *Store) DepositTx(ctx context.Context, arg DepositTxParams) (Deposit
 		if err != nil {
 			return fmt.Errorf("Failed to get receiver wallet: %w", err)
 		}
+
 		return nil
 	})
 	return result, err
