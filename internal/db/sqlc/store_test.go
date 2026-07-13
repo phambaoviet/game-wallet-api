@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const nonExistentWalletID int64 = 9_999_999_999
+
 // init sets up the random seed generator
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -113,5 +115,49 @@ func TestTransferTxInsufficientFunds(t *testing.T) {
 	}
 	if updatedWallet2.Balance != wallet2.Balance {
 		t.Error("expected wallet to be updated")
+	}
+}
+
+func TestTransferTxSenderNotFound(t *testing.T) {
+	receiverWallet := createRandomWallet(t, 10)
+	amount := int64(20)
+
+	_, err := testStore.TransferTx(context.Background(), TransferTxParams{
+		SenderWalletID:   nonExistentWalletID,
+		ReceiverWalletID: receiverWallet.ID,
+		Amount:           amount,
+		Description:      "Test transfer 20 coin",
+	})
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+
+	updatedSender, getErr := testStore.GetWalletByID(context.Background(), receiverWallet.ID)
+	if getErr != nil {
+		t.Fatal(getErr)
+	}
+	if updatedSender.Balance != receiverWallet.Balance {
+		t.Errorf("receiver balance changed: got %d, expected %d", updatedSender.Balance, receiverWallet.Balance)
+	}
+}
+func TestTransferTxReceiverNotFound(t *testing.T) {
+	senderWallet := createRandomWallet(t, 10)
+	amount := int64(20)
+
+	_, err := testStore.TransferTx(context.Background(), TransferTxParams{
+		SenderWalletID:   senderWallet.ID,
+		ReceiverWalletID: nonExistentWalletID,
+		Amount:           amount,
+		Description:      "Test transfer 20 coin",
+	})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	updatedSender, getErr := testStore.GetWalletByID(context.Background(), senderWallet.ID)
+	if getErr != nil {
+		t.Fatal(getErr)
+	}
+	if updatedSender.Balance != senderWallet.Balance {
+		t.Errorf("sender balance changed: got %d, expected %d", updatedSender.Balance, senderWallet.Balance)
 	}
 }
