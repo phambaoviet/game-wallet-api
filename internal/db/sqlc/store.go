@@ -63,7 +63,7 @@ func (store *Store) execTX(
 			_ = tx.Rollback(ctx)
 		}
 	}()
-	// Create new qu
+	// Create new queries
 	q := New(tx)
 	err = fn(q)
 	if err != nil {

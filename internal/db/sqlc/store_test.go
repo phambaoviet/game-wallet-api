@@ -217,3 +217,45 @@ func TestDepositTxInvalidID(t *testing.T) {
 	})
 	checkInvalidDeposit(t, err, wallet.ID, wallet.Balance)
 }
+func TestTransferTxConcurrency(t *testing.T) {
+	wallet1 := createRandomWallet(t, 1000)
+	wallet2 := createRandomWallet(t, 1000)
+	amount := int64(20)
+	n := 10
+	errs := make(chan error, n)
+
+	for i := 0; i < n; i++ {
+		go func() {
+			_, err := testStore.TransferTx(context.Background(), TransferTxParams{
+				SenderWalletID:   wallet1.ID,
+				ReceiverWalletID: wallet2.ID,
+				Amount:           int64(20),
+				Description:      "Test transfer 20 coin",
+			})
+			errs <- err
+		}()
+	}
+	for i := 0; i < n; i++ {
+		err := <-errs
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	updatedWallet1, err := testStore.GetWalletByID(context.Background(), wallet1.ID)
+	if err != nil {
+		t.Fatal("failed to get wallet by ID:", err)
+	}
+	updatedWallet2, err := testStore.GetWalletByID(context.Background(), wallet2.ID)
+	if err != nil {
+		t.Fatal("failed to get wallet by ID:", err)
+	}
+	if updatedWallet1.Balance+updatedWallet2.Balance != wallet2.Balance+wallet1.Balance {
+		t.Fatal("balance mismatch")
+	}
+	if updatedWallet1.Balance != wallet1.Balance-int64(n)*amount {
+		t.Fatal("balance mismatch")
+	}
+	if updatedWallet2.Balance != wallet2.Balance+int64(n)*amount {
+		t.Fatal("balance mismatch")
+	}
+}
