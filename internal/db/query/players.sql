@@ -8,7 +8,7 @@ INSERT INTO players (
 )
 RETURNING id, username, email, password_hash, created_at, updated_at;
 
--- name: GetPLayerByID :one
+-- name: GetPlayerByID :one
 SELECT id, username, email, password_hash, created_at, updated_at
 FROM players
 WHERE id = $1;
@@ -17,4 +17,11 @@ WHERE id = $1;
 SELECT id, username, email, password_hash, created_at, updated_at
 FROM players
 WHERE email = $1;
+
+-- name: ListPlayers :many
+SELECT id, username, email, password_hash, created_at, updated_at
+FROM players
+ORDER BY id
+LIMIT $1
+OFFSET $2;
 

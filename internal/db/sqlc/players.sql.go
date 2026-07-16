@@ -60,14 +60,14 @@ func (q *Queries) GetPLayerByEmail(ctx context.Context, email string) (Player, e
 	return i, err
 }
 
-const getPLayerByID = `-- name: GetPLayerByID :one
+const getPlayerByID = `-- name: GetPlayerByID :one
 SELECT id, username, email, password_hash, created_at, updated_at
 FROM players
 WHERE id = $1
 `
 
-func (q *Queries) GetPLayerByID(ctx context.Context, id int64) (Player, error) {
-	row := q.db.QueryRow(ctx, getPLayerByID, id)
+func (q *Queries) GetPlayerByID(ctx context.Context, id int64) (Player, error) {
+	row := q.db.QueryRow(ctx, getPlayerByID, id)
 	var i Player
 	err := row.Scan(
 		&i.ID,
@@ -78,4 +78,44 @@ func (q *Queries) GetPLayerByID(ctx context.Context, id int64) (Player, error) {
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listPlayers = `-- name: ListPlayers :many
+SELECT id, username, email, password_hash, created_at, updated_at
+FROM players
+ORDER BY id
+LIMIT $1
+OFFSET $2
+`
+
+type ListPlayersParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListPlayers(ctx context.Context, arg ListPlayersParams) ([]Player, error) {
+	rows, err := q.db.Query(ctx, listPlayers, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Player
+	for rows.Next() {
+		var i Player
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Email,
+			&i.PasswordHash,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
