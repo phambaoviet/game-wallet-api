@@ -12,8 +12,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const alphabet = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-
 type createPlayerRequest struct {
 	Username string `json:"username" binding:"required"`
 	Email    string `json:"email" binding:"required"`
@@ -32,6 +30,10 @@ type getPlayerRequest struct {
 type listPlayerRequest struct {
 	Page     int32 `form:"page" binding:"required,min=1"`
 	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
+}
+type loginPlayerRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
 }
 
 func newPlayerResponse(player db.Player) playerResponse {
@@ -108,4 +110,26 @@ func (server Server) listPlayer(c *gin.Context) {
 		rsp[i] = newPlayerResponse(player)
 	}
 	c.JSON(http.StatusOK, rsp)
+}
+func (server Server) loginPlayer(c *gin.Context) {
+	var req loginPlayerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	player, err := server.store.GetPlayerByEmail(c, req.Email)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusUnauthorized, errorResponse(err))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(player.PasswordHash), []byte(req.Password))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+	c.JSON(http.StatusOK, newPlayerResponse(player))
 }

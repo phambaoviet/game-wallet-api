@@ -12,7 +12,7 @@ type Querier interface {
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Player, error)
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
 	CreateWalletTransaction(ctx context.Context, arg CreateWalletTransactionParams) (WalletTransaction, error)
-	GetPLayerByEmail(ctx context.Context, email string) (Player, error)
+	GetPlayerByEmail(ctx context.Context, email string) (Player, error)
 	GetPlayerByID(ctx context.Context, id int64) (Player, error)
 	GetWalletByID(ctx context.Context, id int64) (Wallet, error)
 	GetWalletByPlayerID(ctx context.Context, playerID int64) (Wallet, error)

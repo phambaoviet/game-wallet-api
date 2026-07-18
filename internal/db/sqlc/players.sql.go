@@ -40,14 +40,14 @@ func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Pla
 	return i, err
 }
 
-const getPLayerByEmail = `-- name: GetPLayerByEmail :one
+const getPlayerByEmail = `-- name: GetPlayerByEmail :one
 SELECT id, username, email, password_hash, created_at, updated_at
 FROM players
 WHERE email = $1
 `
 
-func (q *Queries) GetPLayerByEmail(ctx context.Context, email string) (Player, error) {
-	row := q.db.QueryRow(ctx, getPLayerByEmail, email)
+func (q *Queries) GetPlayerByEmail(ctx context.Context, email string) (Player, error) {
+	row := q.db.QueryRow(ctx, getPlayerByEmail, email)
 	var i Player
 	err := row.Scan(
 		&i.ID,
