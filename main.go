@@ -5,16 +5,14 @@ import (
 	"game-wallet-api/api"
 	"game-wallet-api/config"
 	db "game-wallet-api/internal/db/sqlc"
+	"game-wallet-api/util"
 	"log"
-
-	"github.com/joho/godotenv"
 )
 
-const serverAddress = "0.0.0.0:8080"
-
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Error loading .env file")
+	cfg, err := util.LoadConfig(".")
+	if err != nil {
+		log.Fatal("cannot load config", err)
 	}
 	ctx := context.Background()
 	pool, err := config.ConnectDB(ctx)
@@ -25,9 +23,9 @@ func main() {
 	store := db.NewStore(pool)
 	server := api.NewServer(store)
 
-	err = server.Start(serverAddress)
+	err = server.Start(cfg.ServerAddress)
 	if err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
-	
+
 }

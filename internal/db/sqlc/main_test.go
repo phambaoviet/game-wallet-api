@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"game-wallet-api/util"
 	"log"
 	"os"
 	"testing"
@@ -13,19 +14,20 @@ var testQueries *Queries
 var testStore *Store
 
 func TestMain(m *testing.M) {
-	connStr := os.Getenv("DATABASE_URL")
-	if connStr == "" {
-		log.Fatal("DATABASE_URL environment variable not set")
+	cfg, err := util.LoadConfig("../../..")
+	if err != nil {
+		log.Fatal("cannot load config file", err)
 	}
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, connStr)
+	pool, err := pgxpool.New(ctx, cfg.DBSource)
 	if err != nil {
 		log.Fatal("failed to connect to database:", err)
 	}
-	defer pool.Close()
 
 	testQueries = New(pool)
 	testStore = NewStore(pool)
 
-	os.Exit(m.Run())
+	code := m.Run()
+	pool.Close()
+	os.Exit(code)
 }
