@@ -8,14 +8,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type createPlayerRequest struct {
-	Username string `json:"username" binding:"required"`
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Username string `json:"username" binding:"required,min=3,max=30"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
 }
 type playerResponse struct {
 	ID        int64              `json:"id"`
@@ -66,6 +67,14 @@ func (server Server) createPlayer(c *gin.Context) {
 	}
 	player, err := server.store.CreatePlayer(c, arg)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case "23505":
+				c.JSON(http.StatusConflict, gin.H{"error": "username or email already exists"})
+				return
+			}
+		}
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
