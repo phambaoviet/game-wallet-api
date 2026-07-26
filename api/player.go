@@ -25,6 +25,17 @@ type playerResponse struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
+
+func newPlayerResponse(player db.Player) playerResponse {
+	return playerResponse{
+		ID:        player.ID,
+		Username:  player.Username,
+		Email:     player.Email,
+		CreatedAt: player.CreatedAt,
+		UpdatedAt: player.UpdatedAt,
+	}
+}
+
 type getPlayerRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
@@ -35,16 +46,6 @@ type listPlayerRequest struct {
 type loginPlayerRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
-}
-
-func newPlayerResponse(player db.Player) playerResponse {
-	return playerResponse{
-		ID:        player.ID,
-		Username:  player.Username,
-		Email:     player.Email,
-		CreatedAt: player.CreatedAt,
-		UpdatedAt: player.UpdatedAt,
-	}
 }
 
 func (server Server) createPlayer(c *gin.Context) {
@@ -120,6 +121,12 @@ func (server Server) listPlayer(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, rsp)
 }
+
+type loginPlayerResponse struct {
+	AccessToken string         `json:"access_token"`
+	Player      playerResponse `json:"player"`
+}
+
 func (server Server) loginPlayer(c *gin.Context) {
 	var req loginPlayerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -129,7 +136,7 @@ func (server Server) loginPlayer(c *gin.Context) {
 	player, err := server.store.GetPlayerByEmail(c, req.Email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusUnauthorized, errorResponse(err))
+			c.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -140,5 +147,14 @@ func (server Server) loginPlayer(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
-	c.JSON(http.StatusOK, newPlayerResponse(player))
+	accessToken, err := server.tokenMaker.CreateToken(player.ID, player.Email, server.config.AccessTokenDuration)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	rsp := loginPlayerResponse{
+		AccessToken: accessToken,
+		Player:      newPlayerResponse(player),
+	}
+	c.JSON(http.StatusOK, rsp)
 }

@@ -21,7 +21,10 @@ func main() {
 	}
 	defer pool.Close()
 	store := db.NewStore(pool)
-	server := api.NewServer(store)
+	server, err := api.NewServer(cfg, store)
+	if err != nil {
+		log.Fatalf("failed to start server: %v", err)
+	}
 
 	err = server.Start(cfg.ServerAddress)
 	if err != nil {

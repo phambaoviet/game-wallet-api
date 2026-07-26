@@ -1,30 +1,47 @@
 package api
 
 import (
+	"fmt"
 	db "game-wallet-api/internal/db/sqlc"
+	"game-wallet-api/token"
+	"game-wallet-api/util"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Server servers HTTP requests for our banking service
 type Server struct {
-	store  *db.Store
-	router *gin.Engine
+	config     util.Config
+	store      *db.Store
+	tokenMaker token.Maker
+	router     *gin.Engine
 }
 
-func NewServer(store *db.Store) *Server {
-	server := &Server{store: store}
+func NewServer(config util.Config, store *db.Store) (*Server, error) {
+	tokenMaker, err := token.NewJWTMaker(config.TokenKey)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create  maker: %w", err)
+	}
+
+	server := &Server{
+		config:     config,
+		store:      store,
+		tokenMaker: tokenMaker,
+	}
+	server.setupRouter()
+	return server, nil
+}
+func (server *Server) setupRouter() {
 	router := gin.Default()
 	router.POST("/players", server.createPlayer)
 	router.GET("/players/:id", server.getPlayer)
 	router.GET("/players", server.listPlayer)
 	router.POST("/players/login", server.loginPlayer)
 	router.POST("/transfers", server.createTransfer)
+
 	// add routes to router
 	server.router = router
-	return server
 }
-
 func (server Server) Start(address string) error {
 	return server.router.Run(address)
 }
