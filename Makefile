@@ -15,5 +15,5 @@ sqlc:
 server:
 	go run main.go
 test:
-	go test -v -cover ./internal/db/sqlc/...
+	go test -v -cover ./...
 .PHONY: migrate-create migrate-up migrate-down sqlc server

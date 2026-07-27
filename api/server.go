@@ -37,7 +37,7 @@ func (server *Server) setupRouter() {
 	router.POST("/players/login", server.loginPlayer)
 	authRouter := router.Group("/").Use(authMiddleware(server.tokenMaker))
 
-	authRouter.GET("/players/:id", server.getPlayer)
+	authRouter.GET("/players/:id", server.getMe)
 	authRouter.POST("/transfers", server.createTransfer)
 
 	// add routes to router

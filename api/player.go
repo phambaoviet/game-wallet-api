@@ -37,9 +37,6 @@ func newPlayerResponse(player db.Player) playerResponse {
 	}
 }
 
-type getPlayerRequest struct {
-	ID int64 `uri:"id" binding:"required,min=1"`
-}
 type listPlayerRequest struct {
 	Page     int32 `form:"page" binding:"required,min=1"`
 	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
@@ -82,14 +79,10 @@ func (server Server) createPlayer(c *gin.Context) {
 	}
 	c.JSON(http.StatusCreated, newPlayerResponse(player))
 }
-func (server Server) getPlayer(c *gin.Context) {
-	var req getPlayerRequest
-	if err := c.ShouldBindUri(&req); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
-	player, err := server.store.GetPlayerByID(c, req.ID)
+func (server Server) getMe(c *gin.Context) {
+	// Authorize: Ensure the logged-in player only accesses their own resource
+	payload := c.MustGet(authorizationPayloadKey).(*token.Payload)
+	player, err := server.store.GetPlayerByID(c, payload.PlayerID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, errorResponse(err))
@@ -98,13 +91,7 @@ func (server Server) getPlayer(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	// Authorize: Ensure the logged-in player only accesses their own resource
-	payload := c.MustGet(authorizationPayloadKey).(*token.Payload)
-	if payload.PlayerID != player.ID {
-		err := errors.New("player doesn't have permission to access this resource")
-		c.JSON(http.StatusForbidden, errorResponse(err))
-		return
-	}
+
 	c.JSON(http.StatusOK, newPlayerResponse(player))
 
 }
