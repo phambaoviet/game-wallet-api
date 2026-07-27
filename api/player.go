@@ -4,6 +4,7 @@ import (
 	_ "encoding/base64"
 	"errors"
 	db "game-wallet-api/internal/db/sqlc"
+	"game-wallet-api/token"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -95,6 +96,13 @@ func (server Server) getPlayer(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	// Authorize: Ensure the logged-in player only accesses their own resource
+	payload := c.MustGet(authorizationPayloadKey).(*token.Payload)
+	if payload.PlayerID != player.ID {
+		err := errors.New("player doesn't have permission to access this resource")
+		c.JSON(http.StatusForbidden, errorResponse(err))
 		return
 	}
 	c.JSON(http.StatusOK, newPlayerResponse(player))
