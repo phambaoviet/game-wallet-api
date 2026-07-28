@@ -46,7 +46,7 @@ type loginPlayerRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func (server Server) createPlayer(c *gin.Context) {
+func (server Server) createPlayerTx(c *gin.Context) {
 	var req createPlayerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
@@ -59,12 +59,11 @@ func (server Server) createPlayer(c *gin.Context) {
 		return
 	}
 
-	arg := db.CreatePlayerParams{
+	result, err := server.store.CreatePlayerTx(c, db.CreatePlayerTxParams{
 		Username:     req.Username,
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
-	}
-	player, err := server.store.CreatePlayer(c, arg)
+	})
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
@@ -77,7 +76,7 @@ func (server Server) createPlayer(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	c.JSON(http.StatusCreated, newPlayerResponse(player))
+	c.JSON(http.StatusCreated, newPlayerResponse(result.Player))
 }
 func (server Server) getMe(c *gin.Context) {
 	// Authorize: Ensure the logged-in player only accesses their own resource
@@ -138,6 +137,7 @@ func (server Server) loginPlayer(c *gin.Context) {
 		return
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(player.PasswordHash), []byte(req.Password))
+
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, errorResponse(err))
 		return

@@ -41,6 +41,11 @@ type DepositTxResult struct {
 	Wallet      Wallet            `json:"wallet"`
 	Transaction WalletTransaction `json:"transaction"`
 }
+type CreatePlayerTxParams struct {
+	Username     string `json:"username"`
+	PasswordHash string `json:"password_hash"`
+	Email        string `json:"email"`
+}
 
 func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{
@@ -172,4 +177,29 @@ func (store *Store) DepositTx(ctx context.Context, arg DepositTxParams) (Deposit
 		return nil
 	})
 	return result, err
+}
+func (store *Store) CreatePlayerTx(ctx context.Context, arg CreatePlayerTxParams) (CreatePlayerTxResult, error) {
+	var req CreatePlayerTxResult
+
+	err := store.execTX(ctx, func(q *Queries) error {
+		var err error
+		req.Player, err = q.CreatePlayer(ctx, CreatePlayerParams{
+			Username:     arg.Username,
+			PasswordHash: arg.PasswordHash,
+			Email:        arg.Email,
+		})
+		if err != nil {
+			return fmt.Errorf("create player tx: %w", err)
+		}
+		req.Wallet, err = q.CreateWallet(ctx, CreateWalletParams{
+			PlayerID: req.Player.ID,
+			Balance:  0,
+			Currency: "COIN",
+		})
+		if err != nil {
+			return fmt.Errorf("create player wallet: %w", err)
+		}
+		return nil
+	})
+	return req, err
 }

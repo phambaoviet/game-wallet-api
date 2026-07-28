@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	db "game-wallet-api/internal/db/sqlc"
 	"game-wallet-api/token"
 	"net/http"
@@ -11,7 +12,6 @@ import (
 )
 
 type transferRequest struct {
-	SenderWalletID   int64 `json:"sender_wallet_id" binding:"required,min=1"`
 	ReceiverWalletID int64 `json:"receiver_wallet_id" binding:"required,min=1"`
 	Amount           int64 `json:"amount" binding:"required,gt=0"`
 }
@@ -22,13 +22,12 @@ func (server Server) createTransfer(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if req.SenderWalletID == req.ReceiverWalletID {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "sender wallet id cannot be equal to receiver wallet id"})
-		return
-	}
 	// Only the owner of the sender wallet is allowed to initiate the transfer.
 	payload := c.MustGet(authorizationPayloadKey).(*token.Payload)
-	senderWallet, err := server.store.GetWalletByID(c, req.SenderWalletID)
+	fmt.Println("JWT PlayerID =", payload.PlayerID)
+	senderWallet, err := server.store.GetWalletByPlayerID(c, payload.PlayerID)
+	fmt.Println("Sender err:", err)
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -37,13 +36,25 @@ func (server Server) createTransfer(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	if senderWallet.PlayerID != payload.PlayerID {
-		err := errors.New("sender wallet doesn't belong to authenticated player")
-		c.JSON(http.StatusForbidden, errorResponse(err))
+	// Check if receiver wallet exists
+	receiverWallet, err := server.store.GetWalletByPlayerID(c, req.ReceiverWalletID)
+	fmt.Println("Receiver err:", err)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if senderWallet.ID == receiverWallet.ID {
+		err := errors.New("cannot transfer yourself")
+		c.JSON(http.StatusConflict, errorResponse(err))
 		return
 	}
 	arg := db.TransferTxParams{
-		SenderWalletID:   req.SenderWalletID,
+		SenderWalletID:   senderWallet.ID,
 		ReceiverWalletID: req.ReceiverWalletID,
 		Amount:           req.Amount,
 	}
