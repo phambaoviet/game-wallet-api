@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	db "game-wallet-api/internal/db/sqlc"
 	"game-wallet-api/token"
 	"net/http"
@@ -24,9 +23,7 @@ func (server Server) createTransfer(c *gin.Context) {
 	}
 	// Only the owner of the sender wallet is allowed to initiate the transfer.
 	payload := c.MustGet(authorizationPayloadKey).(*token.Payload)
-	fmt.Println("JWT PlayerID =", payload.PlayerID)
 	senderWallet, err := server.store.GetWalletByPlayerID(c, payload.PlayerID)
-	fmt.Println("Sender err:", err)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -38,7 +35,6 @@ func (server Server) createTransfer(c *gin.Context) {
 	}
 	// Check if receiver wallet exists
 	receiverWallet, err := server.store.GetWalletByPlayerID(c, req.ReceiverWalletID)
-	fmt.Println("Receiver err:", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
