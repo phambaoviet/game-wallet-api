@@ -3,6 +3,7 @@ package api
 import (
 	_ "encoding/base64"
 	"errors"
+	"fmt"
 	db "game-wallet-api/internal/db/sqlc"
 	"game-wallet-api/token"
 	"net/http"
@@ -73,6 +74,7 @@ func (server Server) createPlayerTx(c *gin.Context) {
 				return
 			}
 		}
+		fmt.Printf("CreatePlayerTx error: %+v\n", err)
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
