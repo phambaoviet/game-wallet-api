@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 const nonExistentWalletID int64 = 9_999_999_999
@@ -258,4 +260,37 @@ func TestTransferTxConcurrency(t *testing.T) {
 	if updatedWallet2.Balance != wallet2.Balance+int64(n)*amount {
 		t.Fatal("balance mismatch")
 	}
+}
+
+func TestCreatePlayerTx(t *testing.T) {
+	player := randomPlayerName()
+	email := randomEmail()
+	arg := CreatePlayerTxParams{
+		Username:     player,
+		Email:        email,
+		PasswordHash: "hash_password",
+	}
+	result, err := testStore.CreatePlayerTx(context.Background(), arg)
+	require.NoError(t, err)
+
+	// Player
+	require.NotEmpty(t, result.Player.ID)
+	require.Equal(t, arg.Username, result.Player.Username)
+	require.Equal(t, arg.Email, result.Player.Email)
+
+	// Wallet
+	require.NotEmpty(t, result.Wallet.ID)
+	require.Equal(t, result.Wallet.PlayerID, result.Player.ID)
+	require.Equal(t, int64(0), result.Wallet.Balance)
+	require.Equal(t, "COIN", result.Wallet.Currency)
+
+	// query
+	dbPlayer, err := testStore.GetPlayerByID(context.Background(), result.Player.ID)
+	require.NoError(t, err)
+	require.Equal(t, result.Player.ID, dbPlayer.ID)
+
+	dbWallet, err := testStore.GetWalletByID(context.Background(), result.Wallet.ID)
+	require.NoError(t, err)
+	require.Equal(t, result.Wallet.ID, dbWallet.ID)
+
 }
