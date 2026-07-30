@@ -50,8 +50,6 @@ func TestCreatePlayerAPI(t *testing.T) {
 	require.NoError(t, err)
 	request.Header.Set("Content-Type", "application/json")
 	server.router.ServeHTTP(recorder, request)
-	t.Log("status: ", recorder.Code)
-	t.Log("body: ", recorder.Body.String())
 
 	require.Equal(t, http.StatusCreated, recorder.Code)
 }
