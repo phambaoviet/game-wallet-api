@@ -30,9 +30,7 @@ func randomEmail() string {
 	return randomString(6) + "@example.com"
 }
 func TestCreatePlayerAPI(t *testing.T) {
-	require.NotNil(t, testStore, "testStore chưa được khởi tạo!")
 	server := newTestServer(t, testStore)
-	require.NotNil(t, server.router, "server.router đang bị nil!")
 	body := gin.H{
 		"username": randomPlayerName(),
 		"email":    randomEmail(),
