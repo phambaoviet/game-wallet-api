@@ -15,7 +15,7 @@ func main() {
 		log.Fatal("cannot load config", err)
 	}
 	ctx := context.Background()
-	pool, err := config.ConnectDB(ctx)
+	pool, err := config.ConnectDB(ctx, cfg.DBSource)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}

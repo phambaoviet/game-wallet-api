@@ -3,18 +3,13 @@ package config
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func ConnectDB(ctx context.Context) (*pgxpool.Pool, error) {
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		return nil, fmt.Errorf("DATABASE_URL is not config")
-	}
+func ConnectDB(ctx context.Context, dbSource string) (*pgxpool.Pool, error) {
 	// Parse connection string into config struct
-	config, err := pgxpool.ParseConfig(databaseURL)
+	config, err := pgxpool.ParseConfig(dbSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
