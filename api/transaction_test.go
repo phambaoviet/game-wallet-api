@@ -35,3 +35,40 @@ func TestListWalletTransactionsAPI(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, recorder.Code)
 }
+func TestListWalletTransactionsUnauthorized(t *testing.T) {
+	server := newTestServer(t, testStore)
+
+	recorder := httptest.NewRecorder()
+
+	request, err := http.NewRequest(
+		http.MethodGet,
+		"/wallets/me/transactions?page=1&limit=10",
+		nil,
+	)
+	require.NoError(t, err)
+
+	server.router.ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusUnauthorized, recorder.Code)
+}
+func TestListWalletTransactionsInvalidToken(t *testing.T) {
+	server := newTestServer(t, testStore)
+
+	recorder := httptest.NewRecorder()
+
+	request, err := http.NewRequest(
+		http.MethodGet,
+		"/wallets/me/transactions?page=1&limit=10",
+		nil,
+	)
+	require.NoError(t, err)
+
+	request.Header.Set(
+		authorizationHeaderKey,
+		authorizationTypeBearer+" "+"invalid_token",
+	)
+
+	server.router.ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusUnauthorized, recorder.Code)
+}
