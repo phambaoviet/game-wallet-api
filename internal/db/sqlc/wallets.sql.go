@@ -11,6 +11,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countWalletTransactions = `-- name: CountWalletTransactions :one
+SELECT COUNT(*)
+FROM wallet_transactions
+WHERE wallet_id = $1
+`
+
+func (q *Queries) CountWalletTransactions(ctx context.Context, walletID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countWalletTransactions, walletID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createWallet = `-- name: CreateWallet :one
 INSERT INTO wallets (
     player_id,
@@ -148,6 +161,52 @@ func (q *Queries) GetWalletForUpdate(ctx context.Context, id int64) (Wallet, err
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listWalletTransactions = `-- name: ListWalletTransactions :many
+SELECT id, wallet_id, transaction_type, amount, balance_before, balance_after, reference_id, description, created_at
+FROM wallet_transactions
+WHERE wallet_id = $1
+ORDER BY created_at DESC
+    LIMIT $2
+OFFSET $3
+`
+
+type ListWalletTransactionsParams struct {
+	WalletID int64 `json:"wallet_id"`
+	Limit    int32 `json:"limit"`
+	Offset   int32 `json:"offset"`
+}
+
+
+func (q *Queries) ListWalletTransactions(ctx context.Context, arg ListWalletTransactionsParams) ([]WalletTransaction, error) {
+	rows, err := q.db.Query(ctx, listWalletTransactions, arg.WalletID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WalletTransaction
+	for rows.Next() {
+		var i WalletTransaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.WalletID,
+			&i.TransactionType,
+			&i.Amount,
+			&i.BalanceBefore,
+			&i.BalanceAfter,
+			&i.ReferenceID,
+			&i.Description,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateWalletBalance = `-- name: UpdateWalletBalance :one

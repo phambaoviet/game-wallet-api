@@ -43,7 +43,7 @@ type listPlayerRequest struct {
 	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
 }
 type loginPlayerRequest struct {
-	Email    string `json:"email" binding:"required,email"`
+	Email    string `json:"email" binding:"omitempty,email"`
 	Password string `json:"password" binding:"required"`
 }
 

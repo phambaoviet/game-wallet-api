@@ -17,7 +17,7 @@ CREATE TABLE wallets (
 );
 CREATE TABLE wallet_transactions (
     id bigserial PRIMARY KEY,
-    wallet_id BIGINT NOT NULL,
+    wallet_id BIGINT NOT NULL REFERENCES wallets(id),
     transaction_type VARCHAR(30) NOT NULL,
     amount BIGINT NOT NULL CHECK (amount > 0),
     balance_before BIGINT NOT NULL CHECK (balance_before >= 0),

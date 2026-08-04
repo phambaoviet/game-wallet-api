@@ -40,3 +40,16 @@ INSERT INTO wallet_transactions (
     description
 ) VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id, wallet_id, transaction_type, amount, balance_before, balance_after, reference_id, description, created_at;
+
+-- name: CountWalletTransactions :one
+SELECT COUNT(*)
+FROM wallet_transactions
+WHERE wallet_id = $1;
+
+-- name: ListWalletTransactions :many
+SELECT *
+FROM wallet_transactions
+WHERE wallet_id = $1
+ORDER BY created_at DESC
+    LIMIT $2
+OFFSET $3;
