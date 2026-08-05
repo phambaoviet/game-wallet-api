@@ -203,3 +203,31 @@ func (store *Store) CreatePlayerTx(ctx context.Context, arg CreatePlayerTxParams
 	})
 	return req, err
 }
+func (store *Store) GetAllWalletTransactions(
+	ctx context.Context,
+	page int32,
+	limit int32,
+) (GetWalletTransactionsResult, error) {
+	offset := (page - 1) * limit
+
+	total, err := store.CountAllWalletTransactions(ctx)
+	if err != nil {
+		return GetWalletTransactionsResult{}, err
+	}
+	transactions, err := store.ListAllWalletTransactions(
+		ctx,
+		ListAllWalletTransactionsParams{
+			Limit:  limit,
+			Offset: offset,
+		},
+	)
+	if err != nil {
+		return GetWalletTransactionsResult{}, err
+	}
+	return GetWalletTransactionsResult{
+		Page:         page,
+		Limit:        limit,
+		Total:        total,
+		Transactions: transactions,
+	}, nil
+}

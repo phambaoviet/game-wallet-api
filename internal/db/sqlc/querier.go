@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CountAllWalletTransactions(ctx context.Context) (int64, error)
 	CountWalletTransactions(ctx context.Context, walletID int64) (int64, error)
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Player, error)
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
@@ -18,6 +19,7 @@ type Querier interface {
 	GetWalletByID(ctx context.Context, id int64) (Wallet, error)
 	GetWalletByPlayerID(ctx context.Context, playerID int64) (Wallet, error)
 	GetWalletForUpdate(ctx context.Context, id int64) (Wallet, error)
+	ListAllWalletTransactions(ctx context.Context, arg ListAllWalletTransactionsParams) ([]WalletTransaction, error)
 	ListPlayers(ctx context.Context, arg ListPlayersParams) ([]Player, error)
 	ListWalletTransactions(ctx context.Context, arg ListWalletTransactionsParams) ([]WalletTransaction, error)
 	UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) (Wallet, error)

@@ -41,6 +41,7 @@ func (server *Server) setupRouter() {
 	authRouter.GET("/players/me", server.getMe)
 	authRouter.GET("/wallets/me/transactions", server.listWalletTransactions)
 	authRouter.POST("/transfers", server.createTransfer)
+	authRouter.GET("/admin/transactions", server.listAllWalletTransactions)
 
 	// add routes to router
 	server.router = router

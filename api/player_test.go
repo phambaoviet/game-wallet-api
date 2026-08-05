@@ -62,7 +62,6 @@ func createRandomPlayer(t *testing.T, server *Server) randomPlayer {
 	require.Equal(t, http.StatusCreated, recorder.Code)
 
 	return randomPlayer{
-
 		Username: body["username"].(string),
 		Email:    body["email"].(string),
 		Password: body["password"].(string),

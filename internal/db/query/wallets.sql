@@ -53,3 +53,13 @@ WHERE wallet_id = $1
 ORDER BY created_at DESC
     LIMIT $2
 OFFSET $3;
+
+-- name: ListAllWalletTransactions :many
+SELECT *
+FROM wallet_transactions
+ORDER BY created_at DESC
+    LIMIT $1 OFFSET $2;
+
+-- name: CountAllWalletTransactions :one
+SELECT COUNT(*)
+FROM wallet_transactions;

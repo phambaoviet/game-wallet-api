@@ -11,6 +11,18 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countAllWalletTransactions = `-- name: CountAllWalletTransactions :one
+SELECT COUNT(*)
+FROM wallet_transactions
+`
+
+func (q *Queries) CountAllWalletTransactions(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countAllWalletTransactions)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countWalletTransactions = `-- name: CountWalletTransactions :one
 SELECT COUNT(*)
 FROM wallet_transactions
@@ -163,6 +175,48 @@ func (q *Queries) GetWalletForUpdate(ctx context.Context, id int64) (Wallet, err
 	return i, err
 }
 
+const listAllWalletTransactions = `-- name: ListAllWalletTransactions :many
+SELECT id, wallet_id, transaction_type, amount, balance_before, balance_after, reference_id, description, created_at
+FROM wallet_transactions
+ORDER BY created_at DESC
+    LIMIT $1 OFFSET $2
+`
+
+type ListAllWalletTransactionsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListAllWalletTransactions(ctx context.Context, arg ListAllWalletTransactionsParams) ([]WalletTransaction, error) {
+	rows, err := q.db.Query(ctx, listAllWalletTransactions, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WalletTransaction
+	for rows.Next() {
+		var i WalletTransaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.WalletID,
+			&i.TransactionType,
+			&i.Amount,
+			&i.BalanceBefore,
+			&i.BalanceAfter,
+			&i.ReferenceID,
+			&i.Description,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listWalletTransactions = `-- name: ListWalletTransactions :many
 SELECT id, wallet_id, transaction_type, amount, balance_before, balance_after, reference_id, description, created_at
 FROM wallet_transactions
@@ -177,7 +231,6 @@ type ListWalletTransactionsParams struct {
 	Limit    int32 `json:"limit"`
 	Offset   int32 `json:"offset"`
 }
-
 
 func (q *Queries) ListWalletTransactions(ctx context.Context, arg ListWalletTransactionsParams) ([]WalletTransaction, error) {
 	rows, err := q.db.Query(ctx, listWalletTransactions, arg.WalletID, arg.Limit, arg.Offset)
