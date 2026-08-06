@@ -13,21 +13,28 @@ const createPlayer = `-- name: CreatePlayer :one
 INSERT INTO players (
     username,
     email,
-    password_hash
+    password_hash,
+    role
 ) VALUES (
-    $1, $2, $3
+    $1, $2, $3, $4
 )
-RETURNING id, username, email, password_hash, created_at, updated_at
+RETURNING id, username, email, password_hash, created_at, updated_at, role
 `
 
 type CreatePlayerParams struct {
 	Username     string `json:"username"`
 	Email        string `json:"email"`
 	PasswordHash string `json:"password_hash"`
+	Role         string `json:"role"`
 }
 
 func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Player, error) {
-	row := q.db.QueryRow(ctx, createPlayer, arg.Username, arg.Email, arg.PasswordHash)
+	row := q.db.QueryRow(ctx, createPlayer,
+		arg.Username,
+		arg.Email,
+		arg.PasswordHash,
+		arg.Role,
+	)
 	var i Player
 	err := row.Scan(
 		&i.ID,
@@ -36,12 +43,13 @@ func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Pla
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Role,
 	)
 	return i, err
 }
 
 const getPlayerByEmail = `-- name: GetPlayerByEmail :one
-SELECT id, username, email, password_hash, created_at, updated_at
+SELECT id, username, email, password_hash, created_at, updated_at, role
 FROM players
 WHERE email = $1
 `
@@ -56,12 +64,13 @@ func (q *Queries) GetPlayerByEmail(ctx context.Context, email string) (Player, e
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Role,
 	)
 	return i, err
 }
 
 const getPlayerByID = `-- name: GetPlayerByID :one
-SELECT id, username, email, password_hash, created_at, updated_at
+SELECT id, username, email, password_hash, created_at, updated_at, role
 FROM players
 WHERE id = $1
 `
@@ -76,12 +85,13 @@ func (q *Queries) GetPlayerByID(ctx context.Context, id int64) (Player, error) {
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Role,
 	)
 	return i, err
 }
 
 const listPlayers = `-- name: ListPlayers :many
-SELECT id, username, email, password_hash, created_at, updated_at
+SELECT id, username, email, password_hash, created_at, updated_at, role
 FROM players
 ORDER BY id
 LIMIT $1
@@ -109,6 +119,7 @@ func (q *Queries) ListPlayers(ctx context.Context, arg ListPlayersParams) ([]Pla
 			&i.PasswordHash,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Role,
 		); err != nil {
 			return nil, err
 		}

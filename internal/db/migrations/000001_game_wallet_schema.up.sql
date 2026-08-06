@@ -37,3 +37,4 @@ ON wallet_transactions(wallet_id);
 
 CREATE INDEX idx_wallet_transactions_created_at
 ON wallet_transactions(created_at);
+

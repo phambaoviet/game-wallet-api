@@ -45,6 +45,7 @@ type CreatePlayerTxParams struct {
 	Username     string `json:"username"`
 	PasswordHash string `json:"password_hash"`
 	Email        string `json:"email"`
+	Role         string `json:"role"`
 }
 
 func NewStore(pool *pgxpool.Pool) *Store {
@@ -187,6 +188,7 @@ func (store *Store) CreatePlayerTx(ctx context.Context, arg CreatePlayerTxParams
 			Username:     arg.Username,
 			PasswordHash: arg.PasswordHash,
 			Email:        arg.Email,
+			Role:         arg.Role,
 		})
 		if err != nil {
 			return fmt.Errorf("create player tx: %w", err)

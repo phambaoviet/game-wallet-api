@@ -26,6 +26,7 @@ type playerResponse struct {
 	Email     string             `json:"email"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	Role      string             `json:"role"`
 }
 
 func newPlayerResponse(player db.Player) playerResponse {
@@ -33,6 +34,7 @@ func newPlayerResponse(player db.Player) playerResponse {
 		ID:        player.ID,
 		Username:  player.Username,
 		Email:     player.Email,
+		Role:      player.Role,
 		CreatedAt: player.CreatedAt,
 		UpdatedAt: player.UpdatedAt,
 	}
@@ -144,7 +146,7 @@ func (server Server) loginPlayer(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
-	accessToken, err := server.tokenMaker.CreateToken(player.ID, player.Email, server.config.AccessTokenDuration)
+	accessToken, err := server.tokenMaker.CreateToken(player.ID, player.Email, player.Role, server.config.AccessTokenDuration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

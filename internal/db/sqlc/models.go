@@ -15,6 +15,7 @@ type Player struct {
 	PasswordHash string             `json:"password_hash"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	Role         string             `json:"role"`
 }
 
 type Wallet struct {

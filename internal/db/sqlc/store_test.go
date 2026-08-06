@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"game-wallet-api/util"
 	"math/rand"
 	"strings"
 	"testing"
@@ -265,10 +266,12 @@ func TestTransferTxConcurrency(t *testing.T) {
 func TestCreatePlayerTx(t *testing.T) {
 	player := randomPlayerName()
 	email := randomEmail()
+	role := util.RolePlayer
 	arg := CreatePlayerTxParams{
 		Username:     player,
 		Email:        email,
 		PasswordHash: "hash_password",
+		Role:         role,
 	}
 	result, err := testStore.CreatePlayerTx(context.Background(), arg)
 	require.NoError(t, err)
