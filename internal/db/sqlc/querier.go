@@ -22,6 +22,7 @@ type Querier interface {
 	ListAllWalletTransactions(ctx context.Context, arg ListAllWalletTransactionsParams) ([]WalletTransaction, error)
 	ListPlayers(ctx context.Context, arg ListPlayersParams) ([]Player, error)
 	ListWalletTransactions(ctx context.Context, arg ListWalletTransactionsParams) ([]WalletTransaction, error)
+	UpdatePlayerRole(ctx context.Context, arg UpdatePlayerRoleParams) (Player, error)
 	UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) (Wallet, error)
 }
 

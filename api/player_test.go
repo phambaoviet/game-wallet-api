@@ -31,12 +31,15 @@ func randomEmail() string {
 }
 
 type randomPlayer struct {
+	ID       int64
 	Username string
 	Email    string
 	Password string
+	Role     string
 }
 
 func createRandomPlayer(t *testing.T, server *Server) randomPlayer {
+
 	body := gin.H{
 		"username": randomPlayerName(),
 		"email":    randomEmail(),
@@ -61,10 +64,17 @@ func createRandomPlayer(t *testing.T, server *Server) randomPlayer {
 
 	require.Equal(t, http.StatusCreated, recorder.Code)
 
+	var response playerResponse
+
+	err = json.Unmarshal(recorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+
 	return randomPlayer{
+		ID:       response.ID,
 		Username: body["username"].(string),
 		Email:    body["email"].(string),
 		Password: body["password"].(string),
+		Role:     response.Role,
 	}
 }
 func TestCreatePlayerAPI(t *testing.T) {

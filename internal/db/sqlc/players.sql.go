@@ -130,3 +130,30 @@ func (q *Queries) ListPlayers(ctx context.Context, arg ListPlayersParams) ([]Pla
 	}
 	return items, nil
 }
+
+const updatePlayerRole = `-- name: UpdatePlayerRole :one
+UPDATE players
+SET role = $2
+WHERE id = $1
+RETURNING id, username, email, password_hash, created_at, updated_at, role
+`
+
+type UpdatePlayerRoleParams struct {
+	ID   int64  `json:"id"`
+	Role string `json:"role"`
+}
+
+func (q *Queries) UpdatePlayerRole(ctx context.Context, arg UpdatePlayerRoleParams) (Player, error) {
+	row := q.db.QueryRow(ctx, updatePlayerRole, arg.ID, arg.Role)
+	var i Player
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Role,
+	)
+	return i, err
+}

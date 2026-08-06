@@ -36,12 +36,18 @@ func (server *Server) setupRouter() {
 
 	router.POST("/players", server.createPlayerTx)
 	router.POST("/players/login", server.loginPlayer)
-	authRouter := router.Group("/").Use(authMiddleware(server.tokenMaker))
+	authRouter := router.Group("/")
+	authRouter.Use(authMiddleware(server.tokenMaker))
+	adminRouter := authRouter.Group("/admin")
+	adminRouter.Use(RequireRole(util.RoleAdmin))
+	adminRouter.GET(
+		"/transactions",
+		server.listAllWalletTransactions,
+	)
 
 	authRouter.GET("/players/me", server.getMe)
 	authRouter.GET("/wallets/me/transactions", server.listWalletTransactions)
 	authRouter.POST("/transfers", server.createTransfer)
-	authRouter.GET("/admin/transactions", server.listAllWalletTransactions)
 
 	// add routes to router
 	server.router = router
