@@ -63,3 +63,4 @@ ORDER BY created_at DESC
 -- name: CountAllWalletTransactions :one
 SELECT COUNT(*)
 FROM wallet_transactions;
+

@@ -233,3 +233,36 @@ func (store *Store) GetAllWalletTransactions(
 		Transactions: transactions,
 	}, nil
 }
+func (store *Store) GetAllWalletTransactionsByEmail(
+	ctx context.Context,
+	email string,
+	page int32,
+	limit int32,
+) (GetWalletTransactionsResult, error) {
+
+	offset := (page - 1) * limit
+
+	transactions, err := store.Queries.GetAllWalletTransactionsByEmail(
+		ctx,
+		GetAllWalletTransactionsByEmailParams{
+			Email:  email,
+			Limit:  limit,
+			Offset: offset,
+		},
+	)
+	if err != nil {
+		return GetWalletTransactionsResult{}, err
+	}
+
+	total, err := store.Queries.CountWalletTransactionsByEmail(ctx, email)
+	if err != nil {
+		return GetWalletTransactionsResult{}, err
+	}
+
+	return GetWalletTransactionsResult{
+		Page:         page,
+		Limit:        limit,
+		Total:        total,
+		Transactions: transactions,
+	}, nil
+}

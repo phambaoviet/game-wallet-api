@@ -2,15 +2,23 @@ package api
 
 import (
 	"fmt"
+	db "game-wallet-api/internal/db/sqlc"
 	"game-wallet-api/token"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	result db.GetWalletTransactionsResult
+
+	err error
+)
+
 type listTransactionsRequest struct {
-	Page  int32 `form:"page" binding:"required,min=1"`
-	Limit int32 `form:"limit" binding:"required,min=1,max=100"`
+	Page  int32  `form:"page" binding:"required,min=1"`
+	Limit int32  `form:"limit" binding:"required,min=1,max=100"`
+	Email string `form:"email"`
 }
 
 func (server Server) listWalletTransactions(ctx *gin.Context) {
@@ -29,17 +37,6 @@ func (server Server) listWalletTransactions(ctx *gin.Context) {
 		return
 	}
 	fmt.Println("PlayerID:", payload.PlayerID)
-	result, err := server.store.GetWalletTransactions(
-		ctx,
-		wallet.ID,
-		req.Page,
-		req.Limit,
-	)
-	fmt.Println("WalletID:", wallet.ID)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
 
-	ctx.JSON(http.StatusOK, result)
+	fmt.Println("WalletID:", wallet.ID)
 }

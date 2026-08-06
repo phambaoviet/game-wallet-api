@@ -11,9 +11,11 @@ import (
 type Querier interface {
 	CountAllWalletTransactions(ctx context.Context) (int64, error)
 	CountWalletTransactions(ctx context.Context, walletID int64) (int64, error)
+	CountWalletTransactionsByEmail(ctx context.Context, email string) (int64, error)
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Player, error)
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
 	CreateWalletTransaction(ctx context.Context, arg CreateWalletTransactionParams) (WalletTransaction, error)
+	GetAllWalletTransactionsByEmail(ctx context.Context, arg GetAllWalletTransactionsByEmailParams) ([]WalletTransaction, error)
 	GetPlayerByEmail(ctx context.Context, email string) (Player, error)
 	GetPlayerByID(ctx context.Context, id int64) (Player, error)
 	GetWalletByID(ctx context.Context, id int64) (Wallet, error)

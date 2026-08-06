@@ -24,5 +24,19 @@ func (server *Server) listAllWalletTransactions(ctx *gin.Context) {
 		return
 	}
 
+	if req.Email == "" {
+		result, err = server.store.GetAllWalletTransactions(ctx, req.Page, req.Limit)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+	} else {
+		result, err = server.store.GetAllWalletTransactionsByEmail(ctx, req.Email, req.Page, req.Limit)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+	}
+
 	ctx.JSON(http.StatusOK, result)
 }
