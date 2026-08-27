@@ -13,7 +13,7 @@ migrate-down:
 sqlc:
 	sqlc generate
 server:
-	go run main.go
+	go run ./cmd/server
 test:
 	go test -v -cover ./...
 .PHONY: migrate-create migrate-up migrate-down sqlc server
