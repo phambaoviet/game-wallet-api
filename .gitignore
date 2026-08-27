@@ -1,3 +1,15 @@
-.env
-.idea/
 .DS_Store
+
+# Environment
+.env
+*.env
+!*.env.example
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Go
+backend/bin/
+
+.idea/

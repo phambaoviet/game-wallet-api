@@ -1,0 +1,6 @@
+{
+  "name": "Game Wallet Dashboard",
+  "description": "Modern fintech dashboard for players to manage their in-game wallet, view profile, and transfer funds.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
