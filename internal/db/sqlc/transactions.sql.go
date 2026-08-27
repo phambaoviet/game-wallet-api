@@ -74,3 +74,28 @@ func (q *Queries) GetAllWalletTransactionsByEmail(ctx context.Context, arg GetAl
 	}
 	return items, nil
 }
+
+const getDemoFaucetTransaction = `-- name: GetDemoFaucetTransaction :one
+SELECT id, wallet_id, transaction_type, amount, balance_before, balance_after, reference_id, description, created_at
+FROM wallet_transactions
+WHERE wallet_id = $1
+  AND transaction_type = 'DEMO_FAUCET'
+    LIMIT 1
+`
+
+func (q *Queries) GetDemoFaucetTransaction(ctx context.Context, walletID int64) (WalletTransaction, error) {
+	row := q.db.QueryRow(ctx, getDemoFaucetTransaction, walletID)
+	var i WalletTransaction
+	err := row.Scan(
+		&i.ID,
+		&i.WalletID,
+		&i.TransactionType,
+		&i.Amount,
+		&i.BalanceBefore,
+		&i.BalanceAfter,
+		&i.ReferenceID,
+		&i.Description,
+		&i.CreatedAt,
+	)
+	return i, err
+}

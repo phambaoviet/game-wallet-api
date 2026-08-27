@@ -6,6 +6,7 @@ import (
 	"fmt"
 	db "game-wallet-api/internal/db/sqlc"
 	"game-wallet-api/token"
+	"game-wallet-api/util"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,6 +28,16 @@ type playerResponse struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	Role      string             `json:"role"`
+}
+type playerMeResponse struct {
+	ID        int64              `json:"id"`
+	Username  string             `json:"username"`
+	Email     string             `json:"email"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	Role      string             `json:"role"`
+	Balance   int64              `json:"balance"`
+	Currency  string             `json:"currency"`
 }
 
 func newPlayerResponse(player db.Player) playerResponse {
@@ -66,6 +77,7 @@ func (server Server) createPlayerTx(c *gin.Context) {
 		Username:     req.Username,
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
+		Role:         util.RolePlayer,
 	})
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -94,9 +106,23 @@ func (server Server) getMe(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
+	wallet, err := server.store.GetWalletByPlayerID(c, player.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	rsp := playerMeResponse{
+		ID:        player.ID,
+		Username:  player.Username,
+		Email:     player.Email,
+		CreatedAt: player.CreatedAt,
+		UpdatedAt: player.UpdatedAt,
+		Role:      player.Role,
+		Balance:   wallet.Balance,
+		Currency:  wallet.Currency,
+	}
 
-	c.JSON(http.StatusOK, newPlayerResponse(player))
-
+	c.JSON(http.StatusOK, rsp)
 }
 func (server Server) listPlayer(c *gin.Context) {
 	var req listPlayerRequest

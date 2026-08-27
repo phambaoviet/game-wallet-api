@@ -297,3 +297,45 @@ func TestCreatePlayerTx(t *testing.T) {
 	require.Equal(t, result.Wallet.ID, dbWallet.ID)
 
 }
+func TestClaimDemoFaucetTx(t *testing.T) {
+	wallet := createRandomWallet(t, 0)
+	amount := int64(10000)
+
+	result, err := testStore.ClaimDemoFaucetTx(context.Background(), ClaimDemoFaucetTxParams{
+		WalletID: wallet.ID,
+		Amount:   amount,
+	})
+	require.NoError(t, err)
+	require.Equal(t, int64(10000), result.Wallet.Balance)
+
+	require.Equal(t, amount, result.Transaction.Amount)
+	require.Equal(t, "DEMO_FAUCET", result.Transaction.TransactionType)
+	require.Equal(t, int64(0), result.Transaction.BalanceBefore)
+	require.Equal(t, int64(10000), result.Transaction.BalanceAfter)
+}
+func TestClaimDemoFaucetTxTwice(t *testing.T) {
+	wallet := createRandomWallet(t, 0)
+	amount := int64(10000)
+
+	// Claim first
+	_, err := testStore.ClaimDemoFaucetTx(context.Background(), ClaimDemoFaucetTxParams{
+		WalletID: wallet.ID,
+		Amount:   amount,
+	})
+	require.NoError(t, err)
+
+	// Claim second
+	_, err = testStore.ClaimDemoFaucetTx(
+		context.Background(),
+		ClaimDemoFaucetTxParams{
+			WalletID: wallet.ID,
+			Amount:   amount,
+		},
+	)
+	require.Error(t, err)
+
+	// Check the balance
+	updatedWallet, err := testStore.GetWalletByID(context.Background(), wallet.ID)
+	require.NoError(t, err)
+	require.Equal(t, int64(10000), updatedWallet.Balance)
+}

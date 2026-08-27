@@ -6,6 +6,7 @@ import (
 	"game-wallet-api/token"
 	"game-wallet-api/util"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,7 +34,12 @@ func NewServer(config util.Config, store *db.Store) (*Server, error) {
 }
 func (server *Server) setupRouter() {
 	router := gin.Default()
-
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowCredentials: true,
+	}))
 	router.POST("/players", server.createPlayerTx)
 	router.POST("/players/login", server.loginPlayer)
 	authRouter := router.Group("/")
@@ -48,7 +54,10 @@ func (server *Server) setupRouter() {
 	authRouter.GET("/players/me", server.getMe)
 	authRouter.GET("/wallets/me/transactions", server.listWalletTransactions)
 	authRouter.POST("/transfers", server.createTransfer)
-
+	authRouter.POST(
+		"/wallets/claim",
+		server.claimDemoFaucet,
+	)
 	// add routes to router
 	server.router = router
 }

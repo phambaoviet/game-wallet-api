@@ -11,47 +11,57 @@ import (
 )
 
 type transferRequest struct {
-	ReceiverWalletID int64 `json:"receiver_wallet_id" binding:"required,min=1"`
+	ReceiverPlayerID int64 `json:"receiver_player_id" binding:"required,min=1"`
 	Amount           int64 `json:"amount" binding:"required,gt=0"`
 }
 
 func (server Server) createTransfer(c *gin.Context) {
 	var req transferRequest
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// Only the owner of the sender wallet is allowed to initiate the transfer.
+
+	// Get current player's wallet
 	payload := c.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	senderWallet, err := server.store.GetWalletByPlayerID(c, payload.PlayerID)
-
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	// Check if receiver wallet exists
-	receiverWallet, err := server.store.GetWalletByPlayerID(c, req.ReceiverWalletID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Get receiver's wallet using receiver's Player ID
+	receiverWallet, err := server.store.GetWalletByPlayerID(
+		c,
+		req.ReceiverPlayerID,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "receiver player not found"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Prevent self-transfer
 	if senderWallet.ID == receiverWallet.ID {
 		err := errors.New("cannot transfer yourself")
 		c.JSON(http.StatusConflict, errorResponse(err))
 		return
 	}
+
 	arg := db.TransferTxParams{
 		SenderWalletID:   senderWallet.ID,
-		ReceiverWalletID: req.ReceiverWalletID,
+		ReceiverWalletID: receiverWallet.ID, // ⭐ QUAN TRỌNG
 		Amount:           req.Amount,
 	}
 

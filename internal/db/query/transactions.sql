@@ -18,3 +18,10 @@ FROM wallet_transactions wt
     JOIN players p
         ON w.player_id = p.id
 WHERE p.email = $1;
+
+-- name: GetDemoFaucetTransaction :one
+SELECT *
+FROM wallet_transactions
+WHERE wallet_id = $1
+  AND transaction_type = 'DEMO_FAUCET'
+    LIMIT 1;

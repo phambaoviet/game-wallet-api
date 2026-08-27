@@ -16,6 +16,7 @@ type Querier interface {
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
 	CreateWalletTransaction(ctx context.Context, arg CreateWalletTransactionParams) (WalletTransaction, error)
 	GetAllWalletTransactionsByEmail(ctx context.Context, arg GetAllWalletTransactionsByEmailParams) ([]WalletTransaction, error)
+	GetDemoFaucetTransaction(ctx context.Context, walletID int64) (WalletTransaction, error)
 	GetPlayerByEmail(ctx context.Context, email string) (Player, error)
 	GetPlayerByID(ctx context.Context, id int64) (Player, error)
 	GetWalletByID(ctx context.Context, id int64) (Wallet, error)

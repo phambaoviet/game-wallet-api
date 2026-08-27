@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -46,6 +47,16 @@ type CreatePlayerTxParams struct {
 	PasswordHash string `json:"password_hash"`
 	Email        string `json:"email"`
 	Role         string `json:"role"`
+}
+
+type ClaimDemoFaucetTxParams struct {
+	WalletID int64
+	Amount   int64
+}
+
+type ClaimDemoFaucetTxResult struct {
+	Wallet      Wallet
+	Transaction WalletTransaction
 }
 
 func NewStore(pool *pgxpool.Pool) *Store {
@@ -128,7 +139,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		if err != nil {
 			return fmt.Errorf("Failed to create sender transaction: %w", err)
 		}
-		// Create transaction log for reiceiver
+		// Create transaction log for receiver
 		result.ReceiverTransaction, err = q.CreateWalletTransaction(ctx, CreateWalletTransactionParams{
 			WalletID:        arg.ReceiverWalletID,
 			TransactionType: "TRANSFER_IN",
@@ -265,4 +276,56 @@ func (store *Store) GetAllWalletTransactionsByEmail(
 		Total:        total,
 		Transactions: transactions,
 	}, nil
+}
+func (store *Store) ClaimDemoFaucetTx(
+	ctx context.Context,
+	arg ClaimDemoFaucetTxParams,
+) (ClaimDemoFaucetTxResult, error) {
+
+	var result ClaimDemoFaucetTxResult
+
+	err := store.execTX(ctx, func(q *Queries) error {
+
+		wallet, err := q.GetWalletForUpdate(ctx, arg.WalletID)
+		if err != nil {
+			return fmt.Errorf("failed to get wallet: %w", err)
+		}
+
+		_, err = q.GetDemoFaucetTransaction(ctx, wallet.ID)
+
+		if err == nil {
+			return fmt.Errorf("demo faucet already claimed")
+		}
+
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("failed to check demo faucet: %w", err)
+		}
+		result.Wallet, err = q.UpdateWalletBalance(ctx, UpdateWalletBalanceParams{
+			Balance: arg.Amount,
+			ID:      wallet.ID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to update wallet balance: %w", err)
+		}
+		result.Transaction, err = q.CreateWalletTransaction(
+			ctx,
+			CreateWalletTransactionParams{
+				WalletID:        wallet.ID,
+				TransactionType: "DEMO_FAUCET",
+				Amount:          arg.Amount,
+				BalanceBefore:   wallet.Balance,
+				BalanceAfter:    result.Wallet.Balance,
+				Description: pgtype.Text{
+					String: "Demo faucet",
+					Valid:  true,
+				},
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to create faucet transaction: %w", err)
+		}
+		return nil
+	})
+
+	return result, err
 }
