@@ -5,6 +5,7 @@ import (
 	db "game-wallet-api/internal/db/sqlc"
 	"game-wallet-api/token"
 	"game-wallet-api/util"
+	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -40,6 +41,11 @@ func (server *Server) setupRouter() {
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: true,
 	}))
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+		})
+	})
 	router.POST("/players", server.createPlayerTx)
 	router.POST("/players/login", server.loginPlayer)
 	authRouter := router.Group("/")

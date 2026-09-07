@@ -5,22 +5,28 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: root
-      POSTGRES_PASSWORD: "viet@123456"
+      POSTGRES_PASSWORD: 'viet@123456'
       POSTGRES_DB: game_wallet_db
     ports:
-      - "5433:5432"
+      - '5433:5432'
     volumes:
       - game_wallet_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U root -d game_wallet_db']
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: .
     container_name: game-wallet-backend
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
       - app.docker.env
     ports:
-      - "8080:8080"
+      - '8080:8080'
 
 volumes:
   game_wallet_pgdata:

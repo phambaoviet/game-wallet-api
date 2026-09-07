@@ -2,7 +2,7 @@ include .env
 export
 
 MIGRATION_DIR=internal/db/migrations
-CONN_STRING=postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)
+CONN_STRING=$(DB_SOURCE)
 
 migrate-create:
 	migrate create -ext sql -dir $(MIGRATION_DIR) -seq $(name)
